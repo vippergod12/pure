@@ -1,4 +1,4 @@
-# Lục Bảo — Shop trang sức & phụ kiện đá quý
+# PURE — Shop trang sức & phụ kiện đá quý
 
 Website bán trang sức đá quý cao cấp (ngọc lục bảo, ruby, sapphire, kim cương, ngọc trai…)
 với SEO tối đa và admin panel quản lý sản phẩm.
@@ -72,7 +72,7 @@ Mở `.env` và điền:
 | `DATABASE_URL`                    | Connection string Neon (chọn _Pooled connection_, có `?sslmode=require`).          |
 | `JWT_SECRET`                      | Chuỗi ngẫu nhiên để ký token admin. Tối thiểu 32 ký tự ngẫu nhiên.                 |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Tài khoản admin sẽ được seed.                                                    |
-| `NEXT_PUBLIC_SITE_URL`            | Domain production (vd `https://lucbao.vn`). Quan trọng cho SEO + sitemap.          |
+| `NEXT_PUBLIC_SITE_URL`            | Domain production (vd `https://pure.vn`). Quan trọng cho SEO + sitemap.          |
 | `NEXT_PUBLIC_ZALO_PHONE`          | SĐT Zalo của shop (vd `0987654321`). Dùng cho nút "Liên hệ Zalo".                  |
 | `NEXT_PUBLIC_ZALO_URL`            | (Tùy chọn) Link Zalo OA đầy đủ. Nếu set sẽ ghi đè `NEXT_PUBLIC_ZALO_PHONE`.        |
 | `WARM_SECRET`                     | (Tùy chọn) Secret bảo vệ endpoint `/api/_warm` cho cron giữ DB warm.               |
@@ -107,7 +107,7 @@ npm run dev
 4. **Settings → Environment Variables** thêm:
    - `DATABASE_URL`
    - `JWT_SECRET`
-   - `NEXT_PUBLIC_SITE_URL` (vd `https://lucbao.vn`)
+   - `NEXT_PUBLIC_SITE_URL` (vd `https://pure.vn`)
    - `NEXT_PUBLIC_ZALO_PHONE` (hoặc `NEXT_PUBLIC_ZALO_URL`)
 5. Bấm **Deploy**.
 

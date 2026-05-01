@@ -22,7 +22,7 @@ async function main() {
   `;
   console.log(`Đã tạo/cập nhật admin: ${username}`);
 
-  // Danh mục cho shop trang sức & phụ kiện đá quý "Lục Bảo"
+  // Danh mục cho shop trang sức & phụ kiện đá quý "PURE"
   const categories: { name: string; slug: string; image_url: string; description: string }[] = [
     {
       name: 'Nhẫn đá quý',

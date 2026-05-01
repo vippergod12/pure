@@ -93,8 +93,8 @@ export default function Navbar() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >
-          <span className="brand-mark">LB</span>
-          <span>Lục Bảo</span>
+          <span className="brand-mark">P</span>
+          <span>PURE</span>
         </Link>
 
         <nav className={`navbar-links ${open ? 'open' : ''}`}>

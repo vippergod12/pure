@@ -11,10 +11,10 @@ export default function StorySection() {
           aria-hidden
         />
         <div className="story-content">
-          <span className="section-eyebrow">Câu chuyện Lục Bảo</span>
+          <span className="section-eyebrow">Câu chuyện PURE</span>
           <h2>Mỗi viên đá — một di sản thiên nhiên</h2>
           <p>
-            Lục Bảo tuyển chọn những viên đá quý tự nhiên có nguồn gốc rõ ràng,
+            PURE tuyển chọn những viên đá quý tự nhiên có nguồn gốc rõ ràng,
             đi kèm giấy kiểm định quốc tế. Từ ngọc lục bảo Colombia, ruby Myanmar
             đến sapphire Kashmir — mỗi viên đá đều được nghệ nhân chế tác thủ công
             trên khung bạc 925 hoặc vàng 18K.

@@ -1,7 +1,7 @@
 /**
  * Cấu hình trung tâm cho SEO của toàn site.
  *
- * Đặt NEXT_PUBLIC_SITE_URL trong `.env` (ví dụ `https://lucbao.vn`) để các
+ * Đặt NEXT_PUBLIC_SITE_URL trong `.env` (ví dụ `https://pure.vn`) để các
  * thẻ canonical / Open Graph / sitemap dùng đúng domain production.
  *
  * Khi deploy lên Vercel, fallback dùng VERCEL_URL được set tự động.
@@ -51,12 +51,12 @@ function resolveSiteUrl(): string {
 
 export const SITE_URL = resolveSiteUrl();
 
-export const SITE_NAME = 'Lục Bảo';
+export const SITE_NAME = 'PURE';
 
 export const SITE_TAGLINE = 'Tinh hoa đá quý — Tôn vinh vẻ đẹp thuần khiết';
 
 export const SITE_DESCRIPTION =
-  'Lục Bảo — chuyên trang sức đá quý cao cấp: ngọc lục bảo (emerald), ruby, sapphire, kim cương, ngọc trai và bạc 925. Mỗi thiết kế là một tác phẩm thủ công, mang vẻ đẹp tinh khiết của thiên nhiên đến gần bạn.';
+  'PURE — chuyên trang sức đá quý cao cấp: ngọc lục bảo (emerald), ruby, sapphire, kim cương, ngọc trai và bạc 925. Mỗi thiết kế là một tác phẩm thủ công, mang vẻ đẹp tinh khiết của thiên nhiên đến gần bạn.';
 
 export const SITE_LOCALE = 'vi_VN';
 

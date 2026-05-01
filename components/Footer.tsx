@@ -8,8 +8,8 @@ export default function Footer() {
       <div className="container footer-inner">
         <div className="footer-col footer-brand-col">
           <Link href="/" className="footer-logo">
-            <span className="brand-mark">LB</span>
-            <span className="footer-logo-text">Lục Bảo</span>
+            <span className="brand-mark">P</span>
+            <span className="footer-logo-text">PURE</span>
           </Link>
           <p className="footer-tag">
             Trang sức đá quý cao cấp — tôn vinh vẻ đẹp tinh khiết của thiên nhiên
@@ -26,7 +26,7 @@ export default function Footer() {
             </li>
             <li>
               <span className="footer-contact-label">Email:</span>
-              <a href="mailto:hello@lucbao.vn">hello@lucbao.vn</a>
+              <a href="mailto:hello@pure.vn">hello@pure.vn</a>
             </li>
           </ul>
         </div>
@@ -73,7 +73,7 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <div className="container">
-          <p>© {year} Lục Bảo Jewelry. Mọi quyền được bảo lưu.</p>
+          <p>© {year} PURE Jewelry. Mọi quyền được bảo lưu.</p>
         </div>
       </div>
     </footer>
