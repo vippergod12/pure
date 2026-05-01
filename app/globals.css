@@ -1549,12 +1549,18 @@ input[type="reset"]:disabled,
 .cta-grid h2 {
   font-family: var(--serif);
   font-size: clamp(56px, 9vw, 144px);
-  line-height: 0.92;
+  /* Vietnamese typography: cần leading lớn hơn vì các glyph "ý/ỳ/g/y/p"
+     có descender + đồng thời dòng dưới có dấu chồng 2 lớp ("ả", "ắ",
+     "ử", "ộ", "ĩ") vượt trên ascender. Với Playfair Display tại 144px,
+     leading 1.05 vẫn để dấu line-2 đè vào descender line-1.
+     1.2 + gap 0.04em ≈ 6-7px tách dòng → an toàn ở mọi tone mark. */
+  line-height: 1.2;
   font-weight: 500;
   margin: 0;
   letter-spacing: -0.04em;
   display: flex;
   flex-direction: column;
+  gap: 0.04em;
 }
 
 .cta-italic {
