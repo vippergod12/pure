@@ -20,18 +20,24 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
  *      - Vẫn có cảm giác chuyển trang, không bị pop cứng
  */
 
-declare global {
-  interface Document {
-    startViewTransition?: (callback: () => void) => {
-      finished: Promise<void>;
-      ready: Promise<void>;
-      updateCallbackDone: Promise<void>;
-    };
-  }
+/**
+ * Lib DOM trong TS ≥5.4 đã có `Document.startViewTransition` built-in
+ * nên KHÔNG được `declare global` lại — sẽ xung đột "All declarations
+ * of 'startViewTransition' must have identical modifiers".
+ *
+ * Thay vào đó: tạo type alias gọn cho callback runtime, dùng cast khi
+ * gọi để vẫn chạy được trên TS lib cũ (nếu có).
+ */
+type StartViewTransitionFn = (callback: () => void) => unknown;
+
+function getStartViewTransition(): StartViewTransitionFn | null {
+  if (typeof document === 'undefined') return null;
+  const fn = (document as unknown as { startViewTransition?: StartViewTransitionFn })
+    .startViewTransition;
+  return typeof fn === 'function' ? fn.bind(document) : null;
 }
 
-const SUPPORTS_VT =
-  typeof document !== 'undefined' && typeof document.startViewTransition === 'function';
+const SUPPORTS_VT = getStartViewTransition() !== null;
 
 export default function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -73,9 +79,14 @@ export default function PageTransition({ children }: { children: ReactNode }) {
       if (dest === pathname || dest === window.location.pathname + window.location.search) return;
 
       e.preventDefault();
-      document.startViewTransition!(() => {
+      const start = getStartViewTransition();
+      if (start) {
+        start(() => {
+          router.push(dest);
+        });
+      } else {
         router.push(dest);
-      });
+      }
     }
 
     document.addEventListener('click', onClick, { capture: true });
