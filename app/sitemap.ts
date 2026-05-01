@@ -32,6 +32,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: 'daily',
         priority: 0.9,
       },
+      {
+        url: absoluteUrl('/gioi-thieu'),
+        lastModified: now,
+        changeFrequency: 'monthly',
+        priority: 0.6,
+      },
     ];
 
     for (const c of categories) {
@@ -59,6 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [
       { url: absoluteUrl('/'), lastModified: now, changeFrequency: 'daily', priority: 1.0 },
       { url: absoluteUrl('/cua-hang'), lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+      { url: absoluteUrl('/gioi-thieu'), lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     ];
   }
 }

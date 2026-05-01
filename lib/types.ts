@@ -42,3 +42,18 @@ export interface LoginResponse {
 export interface ApiError {
   message: string;
 }
+
+export type ConsultationGender = 'male' | 'female' | 'other' | null;
+export type ConsultationStatus = 'new' | 'contacted';
+
+export interface Consultation {
+  id: number;
+  name: string | null;
+  gender: ConsultationGender;
+  phone: string;
+  note: string | null;
+  status: ConsultationStatus;
+  contacted_at: string | null;
+  source_ip: string | null;
+  created_at: string;
+}

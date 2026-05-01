@@ -32,8 +32,11 @@ export default function Footer() {
         </div>
 
         <div className="footer-col">
-          <h4>Hỗ trợ khách hàng</h4>
+          <h4>Về PURE</h4>
           <ul>
+            <li>
+              <Link href="/gioi-thieu">Câu chuyện thương hiệu</Link>
+            </li>
             <li>
               <Link href="/">Hướng dẫn chọn size nhẫn</Link>
             </li>

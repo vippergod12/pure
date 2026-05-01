@@ -61,3 +61,22 @@ CREATE TABLE IF NOT EXISTS admins (
   password_hash TEXT NOT NULL,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Yêu cầu tư vấn từ khách hàng (form công khai trên /tu-van)
+CREATE TABLE IF NOT EXISTS consultations (
+  id            SERIAL PRIMARY KEY,
+  name          VARCHAR(120),
+  gender        VARCHAR(10),    -- 'male' | 'female' | 'other' | NULL
+  phone         VARCHAR(30) NOT NULL,
+  note          TEXT,
+  status        VARCHAR(20) NOT NULL DEFAULT 'new',  -- 'new' | 'contacted'
+  contacted_at  TIMESTAMPTZ,                          -- NULL = chưa liên hệ
+  source_ip     VARCHAR(64),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Migration cho DB cũ: thêm cột contacted_at nếu chưa có.
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS contacted_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_consultations_status_created
+  ON consultations(status, created_at DESC);

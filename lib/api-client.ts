@@ -1,6 +1,12 @@
 'use client';
 
-import type { Category, LoginResponse, Product } from './types';
+import type {
+  Category,
+  Consultation,
+  ConsultationStatus,
+  LoginResponse,
+  Product,
+} from './types';
 
 export type HomeBundle = {
   categories: Category[];
@@ -134,5 +140,28 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ id }),
     });
+  },
+  submitConsultation(input: {
+    name?: string;
+    gender?: 'male' | 'female' | 'other';
+    phone: string;
+    note?: string;
+  }) {
+    return request<{ ok: true; id: number; created_at: string }>(
+      '/api/consultations',
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  },
+  listConsultations() {
+    return request<Consultation[]>('/api/consultations');
+  },
+  setConsultationStatus(id: number, status: ConsultationStatus) {
+    return request<Consultation>(`/api/consultations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+  deleteConsultation(id: number) {
+    return request<void>(`/api/consultations/${id}`, { method: 'DELETE' });
   },
 };

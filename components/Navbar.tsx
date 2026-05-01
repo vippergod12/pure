@@ -80,6 +80,8 @@ export default function Navbar() {
   }
 
   const isHomeActive = pathname === '/';
+  const isAboutActive = pathname === '/gioi-thieu';
+  const isConsultActive = pathname === '/tu-van';
   const isAdminActive = pathname?.startsWith('/admin');
 
   return (
@@ -136,6 +138,20 @@ export default function Navbar() {
               ))}
             </div>
           </div>
+          <Link
+            href="/gioi-thieu"
+            className={isAboutActive ? 'active' : ''}
+            onClick={closeMobile}
+          >
+            Giới thiệu
+          </Link>
+          <Link
+            href="/tu-van"
+            className={`navbar-cta ${isConsultActive ? 'is-active' : ''}`}
+            onClick={closeMobile}
+          >
+            Đặt hàng
+          </Link>
           {username && (
             <>
               <Link
