@@ -1180,9 +1180,16 @@ input[type="reset"]:disabled,
   padding: 4px 0 44px;
 }
 
+/*
+ * `padding` + negative `margin` cho phép hover-lift của card (translateY +
+ * box-shadow phồng) không bị `overflow: hidden` của Swiper cắt cụt, mà vẫn
+ * giữ nguyên kích thước layout bên ngoài.
+ */
 .strip-carousel .swiper {
   overflow: hidden;
   cursor: grab;
+  padding: 12px 6px 28px;
+  margin: -12px -6px -28px;
 }
 .strip-carousel .swiper.swiper-grabbing { cursor: grabbing; }
 
@@ -1193,9 +1200,14 @@ input[type="reset"]:disabled,
 .strip-slide {
   height: auto;
   display: block;
+  /* Khi user kéo thì không cho text/ảnh tham gia drag native */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
-.strip-slide img {
+.strip-slide img,
+.strip-slide a {
   -webkit-user-drag: none;
   user-select: none;
 }

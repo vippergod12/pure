@@ -1,15 +1,19 @@
 'use client';
 
+import { useId, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, A11y, Keyboard } from 'swiper/modules';
+import type { Swiper as SwiperClass } from 'swiper/types';
+import { Navigation, Pagination, A11y, Keyboard, FreeMode } from 'swiper/modules';
 import type { Category } from '@/lib/types';
+import { useDragGuard } from '@/lib/hooks/useDragGuard';
 import Reveal from '../Reveal';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import 'swiper/css/free-mode';
 
 interface Props {
   categories: Category[];
@@ -17,6 +21,13 @@ interface Props {
 }
 
 export default function CategoryStrip({ categories, loading }: Props) {
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const prevClass = `cs-prev-${uid}`;
+  const nextClass = `cs-next-${uid}`;
+  const paginationClass = `cs-pagination-${uid}`;
+  const swiperRef = useRef<SwiperClass | null>(null);
+  const dragGuard = useDragGuard();
+
   if (loading) return null;
   if (categories.length === 0) return null;
 
@@ -33,21 +44,35 @@ export default function CategoryStrip({ categories, loading }: Props) {
           </div>
         </Reveal>
 
-        <div className="strip-carousel">
+        <div className="strip-carousel" {...dragGuard.bind()}>
           <Swiper
-            modules={[Navigation, Pagination, A11y, Keyboard]}
+            modules={[Navigation, Pagination, A11y, Keyboard, FreeMode]}
+            onSwiper={(s) => {
+              swiperRef.current = s;
+            }}
             spaceBetween={20}
             slidesPerView={1.2}
             slidesPerGroup={1}
             speed={550}
             grabCursor
             keyboard={{ enabled: true }}
+            preventClicks
+            preventClicksPropagation
+            threshold={6}
+            touchStartPreventDefault={false}
+            freeMode={{
+              enabled: true,
+              momentum: true,
+              momentumRatio: 0.6,
+              momentumVelocityRatio: 0.6,
+              sticky: true,
+            }}
             navigation={{
-              prevEl: '.strip-nav-prev',
-              nextEl: '.strip-nav-next',
+              prevEl: `.${prevClass}`,
+              nextEl: `.${nextClass}`,
             }}
             pagination={{
-              el: '.strip-pagination',
+              el: `.${paginationClass}`,
               clickable: true,
               dynamicBullets: true,
               dynamicMainBullets: 4,
@@ -61,7 +86,12 @@ export default function CategoryStrip({ categories, loading }: Props) {
           >
             {categories.map((c, i) => (
               <SwiperSlide key={c.id} className="strip-slide">
-                <Link href={`/danh-muc/${c.slug}`} className="strip-card" draggable={false}>
+                <Link
+                  href={`/danh-muc/${c.slug}`}
+                  className="strip-card"
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                >
                   <div className="strip-image">
                     {c.image_url ? (
                       <Image
@@ -91,7 +121,7 @@ export default function CategoryStrip({ categories, loading }: Props) {
 
           <button
             type="button"
-            className="strip-nav strip-nav-prev"
+            className={`strip-nav strip-nav-prev ${prevClass}`}
             aria-label="Trang trước"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -100,7 +130,7 @@ export default function CategoryStrip({ categories, loading }: Props) {
           </button>
           <button
             type="button"
-            className="strip-nav strip-nav-next"
+            className={`strip-nav strip-nav-next ${nextClass}`}
             aria-label="Trang sau"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -108,7 +138,7 @@ export default function CategoryStrip({ categories, loading }: Props) {
             </svg>
           </button>
 
-          <div className="strip-pagination" />
+          <div className={`strip-pagination ${paginationClass}`} />
         </div>
       </div>
     </section>
