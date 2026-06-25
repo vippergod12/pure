@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import Modal from '@/components/Modal';
+import { ORDERS_REFRESH_EVENT, ORDERS_REFRESH_STORAGE_KEY } from '@/components/OrderRefreshNotifier';
 import Pagination from '@/components/Pagination';
 import RowActions from '@/components/RowActions';
 import { api } from '@/lib/api-client';
@@ -142,7 +143,7 @@ export default function AdminOrdersPage() {
       if (document.visibilityState === 'visible') {
         refresh({ silent: true });
       }
-    }, 10000);
+    }, 3000);
 
     function onVisibilityChange() {
       if (document.visibilityState === 'visible') {
@@ -154,12 +155,26 @@ export default function AdminOrdersPage() {
       refresh({ silent: true });
     }
 
+    function onStorage(event: StorageEvent) {
+      if (event.key === ORDERS_REFRESH_STORAGE_KEY) {
+        refresh({ silent: true });
+      }
+    }
+
+    function onOrdersRefresh() {
+      refresh({ silent: true });
+    }
+
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('focus', onFocus);
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(ORDERS_REFRESH_EVENT, onOrdersRefresh);
     return () => {
       window.clearInterval(id);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('focus', onFocus);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(ORDERS_REFRESH_EVENT, onOrdersRefresh);
     };
   }, [refresh]);
 
@@ -270,7 +285,7 @@ export default function AdminOrdersPage() {
           <p>Quản lý đơn thanh toán AppotaPay, MoMo Merchant và QR thủ công.</p>
           {lastRefreshedAt && (
             <p className="admin-refresh-meta">
-              Tự động cập nhật mỗi 10 giây · Lần cuối {lastRefreshedAt.toLocaleTimeString('vi-VN', {
+              Tự động cập nhật mỗi 3 giây · Lần cuối {lastRefreshedAt.toLocaleTimeString('vi-VN', {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',

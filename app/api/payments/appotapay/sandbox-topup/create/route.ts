@@ -108,9 +108,9 @@ export async function POST(req: NextRequest) {
     sale_price: null,
   };
 
-  let inserted = false;
+  let insertedOrderId: number | null = null;
   try {
-    await sql`
+    const insertedRows = (await sql`
       INSERT INTO orders (
         order_code, product_id, product_snapshot, selected_color, quantity,
         amount, currency, customer_name, customer_phone, customer_email,
@@ -120,10 +120,14 @@ export async function POST(req: NextRequest) {
         ${topupCode}, NULL, ${JSON.stringify(productSnapshot)}::jsonb,
         NULL, 1, ${amount}, 'VND', ${customerName}, ${customerPhone},
         ${customerEmail}, ${note}, 'appotapay_sandbox_topup',
-        ${paymentMethod}, ${bankCode}, 'created'
+        ${paymentMethod}, ${bankCode}, 'pending'
       )
-    `;
-    inserted = true;
+      RETURNING id
+    `) as { id: number }[];
+    insertedOrderId = insertedRows[0]?.id ?? null;
+    if (!insertedOrderId) {
+      throw new Error('Khong the xac nhan record nap tien sau khi tao');
+    }
 
     const appotaPay = await createAppotaPayPayment({
       orderCode: topupCode,
@@ -139,7 +143,7 @@ export async function POST(req: NextRequest) {
     const transactionId = appotaPay.transaction?.transactionId ?? null;
     const paymentUrl = appotaPay.payment?.url ?? null;
 
-    await sql`
+    const updatedRows = (await sql`
       UPDATE orders
       SET payment_url = ${paymentUrl},
           provider_transaction_id = ${transactionId},
@@ -150,11 +154,18 @@ export async function POST(req: NextRequest) {
           appotapay_payload = ${JSON.stringify(appotaPay)}::jsonb,
           updated_at = NOW()
       WHERE order_code = ${topupCode}
-    `;
+      RETURNING id
+    `) as { id: number }[];
+
+    if (!updatedRows[0]?.id) {
+      throw new Error('Khong the xac nhan record nap tien sau khi cap nhat AppotaPay');
+    }
 
     return jsonOk(
       {
         ok: true,
+        saved: true,
+        orderId: updatedRows[0].id,
         topupCode,
         orderCode: topupCode,
         paymentUrl,
@@ -164,7 +175,7 @@ export async function POST(req: NextRequest) {
       { status: 201, cache: 'no-store' },
     );
   } catch (err) {
-    if (inserted) {
+    if (insertedOrderId !== null) {
       const message = err instanceof Error ? err.message : 'Không thể tạo giao dịch nạp tiền sandbox';
       await sql`
         UPDATE orders

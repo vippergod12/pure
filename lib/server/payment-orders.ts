@@ -41,6 +41,83 @@ function callbackAmount(payload: AppotaPayCallbackData): number | null {
   return Number.isFinite(value) ? Math.round(value) : null;
 }
 
+function appotaPayOrderInfo(payload: AppotaPayCallbackData, orderCode: string): string {
+  const info = payload.partnerReference?.order?.info;
+  return typeof info === 'string' && info.trim() ? info.trim().slice(0, 180) : `AppotaPay ${orderCode}`;
+}
+
+function quantityFromOrderInfo(info: string): number {
+  const match = info.match(/\bx\s*(\d{1,3})\s*$/i);
+  if (!match) return 1;
+  const quantity = Number(match[1]);
+  return Number.isFinite(quantity) ? Math.max(1, Math.min(999, Math.floor(quantity))) : 1;
+}
+
+function nameFromOrderInfo(info: string): string {
+  return info.replace(/\s+x\s*\d{1,3}\s*$/i, '').trim() || info;
+}
+
+async function recoverMissingAppotaPayOrder(
+  orderCode: string,
+  payload: AppotaPayCallbackData,
+  status: 'pending' | 'processing' | 'paid' | 'failed',
+): Promise<OrderForPayment | null> {
+  const amount = callbackAmount(payload);
+  if (amount === null) return null;
+
+  const info = appotaPayOrderInfo(payload, orderCode);
+  const transactionId = getAppotaPayTransactionId(payload);
+  const errorMessage = payload.transaction?.errorMessage ?? payload.transaction?.message ?? null;
+  const productSnapshot = {
+    type: 'appotapay_recovered',
+    name: nameFromOrderInfo(info),
+    slug: null,
+    image_url: null,
+    category_name: 'AppotaPay',
+    unit_price: amount,
+    original_price: amount,
+    sale_price: null,
+  };
+
+  const rows = (await sql`
+    INSERT INTO orders (
+      order_code, product_id, product_snapshot, selected_color, quantity,
+      amount, currency, customer_name, customer_phone, customer_email,
+      customer_note, payment_provider, payment_method, bank_code, status,
+      provider_transaction_id, appotapay_status, appotapay_error_code,
+      appotapay_error_message, appotapay_payload, admin_note, paid_at
+    )
+    VALUES (
+      ${orderCode}, NULL, ${JSON.stringify(productSnapshot)}::jsonb,
+      NULL, ${quantityFromOrderInfo(info)}, ${amount}, ${payload.transaction?.currency ?? 'VND'},
+      'AppotaPay callback', '-', NULL,
+      ${`Recovered from AppotaPay callback. Original order was not found in this database. Info: ${info}`},
+      'appotapay', ${payload.transaction?.paymentMethod ?? 'ALL'},
+      ${payload.transaction?.bankCode ?? null}, ${status},
+      ${transactionId}, ${payload.transaction?.status ?? null},
+      ${payload.transaction?.errorCode ?? null}, ${errorMessage},
+      ${JSON.stringify(payload)}::jsonb,
+      'Recovered from AppotaPay callback because original order was not found in this database.',
+      CASE WHEN ${status} = 'paid' THEN NOW() ELSE NULL END
+    )
+    ON CONFLICT (order_code) DO UPDATE
+    SET status = EXCLUDED.status,
+        provider_transaction_id = COALESCE(EXCLUDED.provider_transaction_id, orders.provider_transaction_id),
+        appotapay_status = EXCLUDED.appotapay_status,
+        appotapay_error_code = EXCLUDED.appotapay_error_code,
+        appotapay_error_message = EXCLUDED.appotapay_error_message,
+        appotapay_payload = EXCLUDED.appotapay_payload,
+        paid_at = CASE
+          WHEN EXCLUDED.status = 'paid' AND orders.paid_at IS NULL THEN NOW()
+          ELSE orders.paid_at
+        END,
+        updated_at = NOW()
+    RETURNING id, amount
+  `) as OrderForPayment[];
+
+  return rows[0] ?? null;
+}
+
 export async function applyAppotaPayCallback(input: {
   data: string | null;
   signature: string | null;
@@ -64,19 +141,20 @@ export async function applyAppotaPayCallback(input: {
     return { ok: false, orderCode: null, status: null, reason: 'Không tìm thấy mã đơn hàng', payload };
   }
 
+  const appotaStatus = payload.transaction?.status ?? null;
+  const nextStatus = mapAppotaPayStatus(appotaStatus);
+
   const rows = (await sql`
     SELECT id, amount
     FROM orders
     WHERE order_code = ${orderCode}
     LIMIT 1
   `) as OrderForPayment[];
-  const order = rows[0];
+  const order = rows[0] ?? (await recoverMissingAppotaPayOrder(orderCode, payload, nextStatus));
   if (!order) {
     return { ok: false, orderCode, status: null, reason: 'Đơn hàng không tồn tại', payload };
   }
 
-  const appotaStatus = payload.transaction?.status ?? null;
-  const nextStatus = mapAppotaPayStatus(appotaStatus);
   const amount = callbackAmount(payload);
   const expectedAmount = Math.round(Number(order.amount));
   const amountMatches = nextStatus !== 'paid' || amount === expectedAmount;
