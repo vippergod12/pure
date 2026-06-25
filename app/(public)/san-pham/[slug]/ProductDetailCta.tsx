@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import type { Product } from '@/lib/types';
 import { formatVnd } from '@/lib/utils/format';
 import { getSaleInfo } from '@/lib/utils/sale';
@@ -59,6 +60,12 @@ export default function ProductDetailCta({ product }: Props) {
       ? product.colors[0]
       : null,
   );
+  const checkoutHref = useMemo(() => {
+    const params = new URLSearchParams();
+    if (selectedColor) params.set('color', selectedColor);
+    const query = params.toString();
+    return `/thanh-toan/${product.slug}${query ? `?${query}` : ''}`;
+  }, [product.slug, selectedColor]);
 
   return (
     <>
@@ -84,11 +91,15 @@ export default function ProductDetailCta({ product }: Props) {
         </div>
       )}
 
-      {product.is_active && ZALO_ENABLED ? (
+      {product.is_active ? (
         <div className="product-detail-cta">
+          <Link className="btn-checkout" href={checkoutHref}>
+            Thanh toán online
+          </Link>
+          {ZALO_ENABLED && (
           <button
             type="button"
-            className="btn-zalo"
+            className="btn-zalo btn-zalo-secondary"
             onClick={() => handleZaloContact(product, sale.effectivePrice, selectedColor)}
             aria-label="Liên hệ shop qua Zalo để mua"
           >
@@ -98,12 +109,13 @@ export default function ProductDetailCta({ product }: Props) {
                 d="M32 6C16.5 6 4 16.7 4 30c0 7 3.5 13.3 9.2 17.6-.5 2.5-1.7 5.7-4 8 .3.4.8.6 1.4.5 4.3-.5 8.5-2.2 11.5-3.7 3.2.9 6.5 1.4 9.9 1.4 15.5 0 28-10.7 28-24S47.5 6 32 6zm-9.6 28.7h-6.7c-.6 0-1-.4-1-1v-9.5c0-.6.4-1 1-1s1 .4 1 1v8.5h5.7c.6 0 1 .4 1 1s-.4 1-1 1zm5-1c0 .6-.4 1-1 1s-1-.4-1-1v-9.5c0-.6.4-1 1-1s1 .4 1 1v9.5zm9.4 0c0 .6-.4 1-1 1-.3 0-.6-.2-.8-.4l-5-6.6v6c0 .6-.4 1-1 1s-1-.4-1-1v-9.5c0-.6.4-1 1-1 .3 0 .6.2.8.4l5 6.6v-6c0-.6.4-1 1-1s1 .4 1 1v9.5zm10.6 0c0 .3-.2.6-.4.8-.2.2-.4.3-.6.3h-6c-.6 0-1-.4-1-1v-9.5c0-.6.4-1 1-1s1 .4 1 1v8.5h5c.6 0 1 .4 1 .9z"
               />
             </svg>
-            Liên hệ ngay để được tư vấn
+            Tư vấn qua Zalo
           </button>
+          )}
           <span className="product-detail-cta-hint">
             {selectedColor
-              ? `Đang chọn màu: ${selectedColor} — thông tin đã copy vào clipboard.`
-              : 'Bấm để mở Zalo — thông tin sản phẩm đã được copy vào clipboard.'}
+              ? `Đang chọn màu: ${selectedColor}`
+              : 'Thanh toán qua AppotaPay hoặc nhắn shop để được tư vấn thêm.'}
           </span>
         </div>
       ) : !product.is_active ? (
@@ -117,8 +129,8 @@ export default function ProductDetailCta({ product }: Props) {
         </div>
       ) : null}
 
-      {product.is_active && ZALO_ENABLED && (
-        <div className="mobile-cta-bar" role="region" aria-label="Liên hệ mua hàng">
+      {product.is_active && (
+        <div className="mobile-cta-bar" role="region" aria-label="Thanh toán sản phẩm">
           <div className="mobile-cta-bar-price">
             {sale.isOnSale ? (
               <>
@@ -129,9 +141,14 @@ export default function ProductDetailCta({ product }: Props) {
               <span className="mobile-cta-bar-sale">{formatVnd(product.price)}</span>
             )}
           </div>
+          <div className="mobile-cta-bar-actions">
+            <Link className="btn-checkout mobile-cta-bar-btn" href={checkoutHref}>
+              <span>Thanh toán</span>
+            </Link>
+            {ZALO_ENABLED && (
           <button
             type="button"
-            className="btn-zalo mobile-cta-bar-btn"
+            className="btn-zalo mobile-cta-bar-btn mobile-cta-zalo"
             onClick={() => handleZaloContact(product, sale.effectivePrice, selectedColor)}
             aria-label="Liên hệ shop qua Zalo để mua"
           >
@@ -141,8 +158,10 @@ export default function ProductDetailCta({ product }: Props) {
                 d="M32 6C16.5 6 4 16.7 4 30c0 7 3.5 13.3 9.2 17.6-.5 2.5-1.7 5.7-4 8 .3.4.8.6 1.4.5 4.3-.5 8.5-2.2 11.5-3.7 3.2.9 6.5 1.4 9.9 1.4 15.5 0 28-10.7 28-24S47.5 6 32 6zm-9.6 28.7h-6.7c-.6 0-1-.4-1-1v-9.5c0-.6.4-1 1-1s1 .4 1 1v8.5h5.7c.6 0 1 .4 1 1s-.4 1-1 1zm5-1c0 .6-.4 1-1 1s-1-.4-1-1v-9.5c0-.6.4-1 1-1s1 .4 1 1v9.5zm9.4 0c0 .6-.4 1-1 1-.3 0-.6-.2-.8-.4l-5-6.6v6c0 .6-.4 1-1 1s-1-.4-1-1v-9.5c0-.6.4-1 1-1 .3 0 .6.2.8.4l5 6.6v-6c0-.6.4-1 1-1s1 .4 1 1v9.5zm10.6 0c0 .3-.2.6-.4.8-.2.2-.4.3-.6.3h-6c-.6 0-1-.4-1-1v-9.5c0-.6.4-1 1-1s1 .4 1 1v8.5h5c.6 0 1 .4 1 .9z"
               />
             </svg>
-            <span>Mua qua Zalo</span>
+            <span>Zalo</span>
           </button>
+            )}
+          </div>
         </div>
       )}
     </>

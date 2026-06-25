@@ -80,3 +80,50 @@ ALTER TABLE consultations ADD COLUMN IF NOT EXISTS contacted_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_consultations_status_created
   ON consultations(status, created_at DESC);
+
+-- Orders created from the public checkout flow and paid through AppotaPay.
+CREATE TABLE IF NOT EXISTS orders (
+  id                       SERIAL PRIMARY KEY,
+  order_code               VARCHAR(50) NOT NULL UNIQUE,
+  product_id               INTEGER REFERENCES products(id) ON DELETE SET NULL,
+  product_snapshot         JSONB NOT NULL DEFAULT '{}'::jsonb,
+  selected_color           VARCHAR(120),
+  quantity                 INTEGER NOT NULL DEFAULT 1,
+  amount                   INTEGER NOT NULL,
+  currency                 VARCHAR(10) NOT NULL DEFAULT 'VND',
+  customer_name            VARCHAR(160) NOT NULL,
+  customer_phone           VARCHAR(40) NOT NULL,
+  customer_email           VARCHAR(160),
+  customer_note            TEXT,
+  payment_provider         VARCHAR(40) NOT NULL DEFAULT 'appotapay',
+  payment_method           VARCHAR(30) NOT NULL DEFAULT 'ALL',
+  bank_code                VARCHAR(40),
+  payment_url              TEXT,
+  provider_transaction_id  VARCHAR(120),
+  status                   VARCHAR(30) NOT NULL DEFAULT 'created',
+  appotapay_status         VARCHAR(40),
+  appotapay_error_code     INTEGER,
+  appotapay_error_message  TEXT,
+  appotapay_payload        JSONB,
+  momo_result_code         INTEGER,
+  momo_message             TEXT,
+  momo_pay_type            VARCHAR(40),
+  momo_request_id          VARCHAR(120),
+  momo_payload             JSONB,
+  admin_note               TEXT,
+  paid_at                  TIMESTAMPTZ,
+  created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at               TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS momo_result_code INTEGER;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS momo_message TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS momo_pay_type VARCHAR(40);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS momo_request_id VARCHAR(120);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS momo_payload JSONB;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_note TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_orders_code ON orders(order_code);
+CREATE INDEX IF NOT EXISTS idx_orders_status_created ON orders(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_product_created ON orders(product_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_provider_transaction ON orders(payment_provider, provider_transaction_id);

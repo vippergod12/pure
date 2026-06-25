@@ -8,9 +8,10 @@ interface Props {
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  size?: 'default' | 'wide';
 }
 
-export default function Modal({ open, title, onClose, children, footer }: Props) {
+export default function Modal({ open, title, onClose, children, footer, size = 'default' }: Props) {
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -24,7 +25,7 @@ export default function Modal({ open, title, onClose, children, footer }: Props)
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal ${size === 'wide' ? 'is-wide' : ''}`} onClick={(e) => e.stopPropagation()}>
         <header className="modal-header">
           <h3>{title}</h3>
           <button type="button" aria-label="Đóng" className="modal-close" onClick={onClose}>×</button>

@@ -5,6 +5,7 @@ import type {
   Consultation,
   ConsultationStatus,
   LoginResponse,
+  Order,
   Product,
 } from './types';
 
@@ -163,5 +164,21 @@ export const api = {
   },
   deleteConsultation(id: number) {
     return request<void>(`/api/consultations/${id}`, { method: 'DELETE' });
+  },
+  listOrders() {
+    return request<Order[]>('/api/orders');
+  },
+  updateOrder(id: number, input: {
+    status: string;
+    provider_transaction_id?: string | null;
+    admin_note?: string | null;
+  }) {
+    return request<Order>(`/api/orders/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  },
+  deleteOrder(id: number) {
+    return request<void>(`/api/orders/${id}`, { method: 'DELETE' });
   },
 };

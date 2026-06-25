@@ -128,6 +128,114 @@ Sau khi deploy lần đầu, từ máy local chạy `npm run db:init && npm run 
 
 ---
 
+## Thanh toán AppotaPay
+
+Luồng thanh toán mới là “mua ngay” từ trang chi tiết sản phẩm:
+
+1. Khách bấm **Thanh toán online** trên `/san-pham/:slug`.
+2. Trang `/thanh-toan/:slug` lấy thông tin khách và gọi `/api/payments/appotapay/create`.
+3. Server tạo `orders`, gọi AppotaPay `POST /api/v2/orders/payment`, nhận `payment.url` rồi chuyển khách sang AppotaPay.
+4. AppotaPay gọi `notifyUrl` `/api/payments/appotapay/ipn` và redirect browser qua `/thanh-toan/ket-qua`.
+5. Server verify `signature = HMAC_SHA256(data, APPOTAPAY_SECRET_KEY)`, decode `data`, đối chiếu số tiền và cập nhật trạng thái order.
+
+Biến môi trường cần thêm:
+
+```env
+APPOTAPAY_ENV=sandbox
+APPOTAPAY_PARTNER_CODE=
+APPOTAPAY_API_KEY=
+APPOTAPAY_SECRET_KEY=
+APPOTAPAY_LANGUAGE=vi
+APPOTAPAY_GATEWAY_URL=
+APPOTAPAY_ACCOUNT_REF_ID=
+APPOTAPAY_NOTIFY_URL=
+APPOTAPAY_REDIRECT_URL=
+```
+
+Nếu `APPOTAPAY_NOTIFY_URL` / `APPOTAPAY_REDIRECT_URL` để trống, app dùng `NEXT_PUBLIC_SITE_URL` để tạo URL tuyệt đối. Khi test local, redirect browser có thể về `localhost`, nhưng IPN server-to-server cần public tunnel như ngrok hoặc deploy preview.
+
+### Sandbox nạp tiền bằng AppotaPay
+
+Trang test nạp tiền sandbox nằm tại:
+
+```txt
+/sandbox/nap-tien
+```
+
+Luồng này tạo record trong bảng `orders` với mã bắt đầu bằng `TOPUP`, provider `appotapay_sandbox_topup`, rồi gọi AppotaPay sandbox như một giao dịch thanh toán bình thường. Khi AppotaPay trả IPN/return hợp lệ, hệ thống cập nhật `status`, `paid_at`, mã giao dịch và payload như đơn hàng AppotaPay.
+
+Điều kiện để dùng:
+
+```env
+APPOTAPAY_ENV=sandbox
+APPOTAPAY_PARTNER_CODE=
+APPOTAPAY_API_KEY=
+APPOTAPAY_SECRET_KEY=
+NEXT_PUBLIC_SITE_URL=https://your-public-url
+APPOTAPAY_NOTIFY_URL=https://your-public-url/api/payments/appotapay/ipn
+APPOTAPAY_REDIRECT_URL=https://your-public-url/thanh-toan/ket-qua
+```
+
+Route tạo giao dịch sandbox sẽ từ chối chạy nếu `APPOTAPAY_ENV=production`, để tránh tạo giao dịch thật ngoài ý muốn. Các giao dịch TOPUP cũng hiển thị trong `/admin/orders` để kiểm tra trạng thái.
+
+## Thanh toán MoMo Merchant API chính thức
+
+Luồng MoMo chính thức dùng One-Time Payment `captureWallet`:
+
+1. Khách chọn **MoMo Merchant** trên `/thanh-toan/:slug`.
+2. Server tạo `orders`, gọi MoMo `POST /v2/gateway/api/create`, nhận `payUrl` rồi chuyển khách sang MoMo.
+3. Sau khi khách quét QR/xác nhận trong ví MoMo, MoMo gọi IPN `POST /api/payments/momo/ipn`.
+4. Server verify `signature` bằng `MOMO_SECRET_KEY`, đối chiếu `partnerCode`, `orderId`, `amount`, rồi cập nhật order:
+   - `resultCode = 0` -> `status = paid`, set `paid_at`.
+   - Đang xử lý -> `status = processing`.
+   - Thất bại -> `status = failed`.
+5. Browser redirect qua `/api/payments/momo/return` chỉ để hiển thị kết quả; IPN vẫn là nguồn cập nhật chính.
+
+Biến môi trường cần thêm:
+
+```env
+MOMO_ENV=sandbox
+MOMO_PARTNER_CODE=
+MOMO_ACCESS_KEY=
+MOMO_SECRET_KEY=
+MOMO_LANG=vi
+MOMO_GATEWAY_URL=
+MOMO_STORE_NAME=
+MOMO_STORE_ID=
+MOMO_IPN_URL=
+MOMO_REDIRECT_URL=
+```
+
+Nếu `MOMO_IPN_URL` / `MOMO_REDIRECT_URL` để trống, app dùng `NEXT_PUBLIC_SITE_URL`.
+Khi test local, bắt buộc dùng URL public như ngrok hoặc Vercel preview vì MoMo không gọi được `localhost`.
+
+Sau khi cập nhật code, chạy lại schema một lần:
+
+```bash
+npm run db:init
+```
+
+### Test bằng QR MoMo/ZaloPay thủ công
+
+Khi chưa có merchant keys chính thức của MoMo/ZaloPay, bạn có thể bật lựa chọn QR thủ công ở checkout. Luồng này chỉ tạo đơn, hiển thị mã QR và nội dung chuyển khoản; shop cần tự kiểm tra giao dịch rồi xác nhận đơn.
+
+```env
+MOMO_QR_IMAGE_URL=/payments/momo-qr.png
+MOMO_RECEIVER_NAME=PURE
+MOMO_RECEIVER_ACCOUNT=0900000000
+ZALOPAY_QR_IMAGE_URL=/payments/zalopay-qr.png
+ZALOPAY_RECEIVER_NAME=PURE
+ZALOPAY_RECEIVER_ACCOUNT=0900000000
+```
+
+Đặt ảnh QR vào `public/payments/`. Không dùng luồng thủ công để tự động đánh dấu đơn đã thanh toán; để tự động xác nhận cần tích hợp API/webhook chính thức do từng ví cấp cho merchant.
+
+Chạy lại schema sau khi cập nhật code:
+
+```bash
+npm run db:init
+```
+
 ## API Endpoints
 
 | Method | Path                            | Auth  | Mô tả                                                                |
