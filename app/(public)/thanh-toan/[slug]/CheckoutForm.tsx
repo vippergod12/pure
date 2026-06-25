@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { formatVnd } from '@/lib/utils/format';
@@ -92,14 +92,16 @@ export default function CheckoutForm({ product, initialColor, appotaPayEnvironme
   const [appotaPayMethod, setAppotaPayMethod] = useState<AppotaPayMethod>('ALL');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   const total = Math.round(sale.effectivePrice * quantity);
   const selectedRail = paymentRails.find((item) => item.value === paymentRail) ?? paymentRails[0];
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting) return;
+    if (submittingRef.current) return;
 
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -144,6 +146,7 @@ export default function CheckoutForm({ product, initialColor, appotaPayEnvironme
       window.location.assign(paymentUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể tạo thanh toán');
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }

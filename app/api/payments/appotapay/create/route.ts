@@ -31,6 +31,14 @@ type ProductRow = {
   category_slug: string | null;
 };
 
+type ReusableOrderRow = {
+  id: number;
+  order_code: string;
+  payment_url: string | null;
+  provider_transaction_id: string | null;
+  status: string;
+};
+
 type CreatePaymentBody = {
   productId?: number | string;
   quantity?: number | string;
@@ -151,6 +159,43 @@ export async function POST(req: NextRequest) {
     original_price: sale.originalPrice,
     sale_price: sale.salePrice,
   };
+
+  const reusableRows = (await sql`
+    SELECT id, order_code, payment_url, provider_transaction_id, status
+    FROM orders
+    WHERE payment_provider = 'appotapay'
+      AND status IN ('pending', 'processing')
+      AND payment_url IS NOT NULL
+      AND product_id = ${product.id}
+      AND quantity = ${quantity}
+      AND amount = ${amount}
+      AND customer_phone = ${customerPhone}
+      AND customer_name = ${customerName}
+      AND customer_email IS NOT DISTINCT FROM ${customerEmail}
+      AND selected_color IS NOT DISTINCT FROM ${selectedColor}
+      AND payment_method = ${paymentMethod}
+      AND bank_code IS NOT DISTINCT FROM ${bankCode}
+      AND created_at >= NOW() - INTERVAL '15 minutes'
+    ORDER BY created_at DESC
+    LIMIT 1
+  `) as ReusableOrderRow[];
+
+  const reusable = reusableRows[0];
+  if (reusable?.payment_url) {
+    return jsonOk(
+      {
+        ok: true,
+        saved: true,
+        reused: true,
+        orderId: reusable.id,
+        orderCode: reusable.order_code,
+        paymentUrl: reusable.payment_url,
+        transactionId: reusable.provider_transaction_id,
+        status: reusable.status,
+      },
+      { status: 200, cache: 'no-store' },
+    );
+  }
 
   let insertedOrderId: number | null = null;
   try {

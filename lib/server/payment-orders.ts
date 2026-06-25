@@ -33,6 +33,7 @@ export interface MomoCallbackResult {
 type OrderForPayment = {
   id: number;
   amount: number | string;
+  order_code?: string;
 };
 
 function callbackAmount(payload: AppotaPayCallbackData): number | null {
@@ -112,7 +113,7 @@ async function recoverMissingAppotaPayOrder(
           ELSE orders.paid_at
         END,
         updated_at = NOW()
-    RETURNING id, amount
+    RETURNING id, amount, order_code
   `) as OrderForPayment[];
 
   return rows[0] ?? null;
@@ -137,29 +138,55 @@ export async function applyAppotaPayCallback(input: {
   }
 
   const orderCode = getAppotaPayOrderCode(payload);
-  if (!orderCode) {
-    return { ok: false, orderCode: null, status: null, reason: 'Không tìm thấy mã đơn hàng', payload };
-  }
-
   const appotaStatus = payload.transaction?.status ?? null;
   const nextStatus = mapAppotaPayStatus(appotaStatus);
+  const transactionId = getAppotaPayTransactionId(payload);
 
-  const rows = (await sql`
-    SELECT id, amount
-    FROM orders
-    WHERE order_code = ${orderCode}
-    LIMIT 1
-  `) as OrderForPayment[];
-  const order = rows[0] ?? (await recoverMissingAppotaPayOrder(orderCode, payload, nextStatus));
+  let order: OrderForPayment | null = null;
+  let resolvedOrderCode = orderCode;
+
+  if (orderCode) {
+    const rows = (await sql`
+      SELECT id, amount, order_code
+      FROM orders
+      WHERE order_code = ${orderCode}
+      LIMIT 1
+    `) as OrderForPayment[];
+    order = rows[0] ?? null;
+  }
+
+  if (!order && transactionId) {
+    const rows = (await sql`
+      SELECT id, amount, order_code
+      FROM orders
+      WHERE payment_provider IN ('appotapay', 'appotapay_sandbox_topup')
+        AND provider_transaction_id = ${transactionId}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `) as OrderForPayment[];
+    order = rows[0] ?? null;
+    resolvedOrderCode = order?.order_code ?? resolvedOrderCode;
+  }
+
+  if (!order && orderCode && nextStatus === 'paid') {
+    order = await recoverMissingAppotaPayOrder(orderCode, payload, nextStatus);
+    resolvedOrderCode = order?.order_code ?? resolvedOrderCode;
+  }
+
   if (!order) {
-    return { ok: false, orderCode, status: null, reason: 'Đơn hàng không tồn tại', payload };
+    return {
+      ok: false,
+      orderCode: resolvedOrderCode,
+      status: nextStatus,
+      reason: 'Don hang khong ton tai hoac callback khong khop ma giao dich',
+      payload,
+    };
   }
 
   const amount = callbackAmount(payload);
   const expectedAmount = Math.round(Number(order.amount));
   const amountMatches = nextStatus !== 'paid' || amount === expectedAmount;
   const status = amountMatches ? nextStatus : 'amount_mismatch';
-  const transactionId = getAppotaPayTransactionId(payload);
   const errorMessage = payload.transaction?.errorMessage ?? payload.transaction?.message ?? null;
 
   await sql`
@@ -181,14 +208,14 @@ export async function applyAppotaPayCallback(input: {
   if (!amountMatches) {
     return {
       ok: false,
-      orderCode,
+      orderCode: resolvedOrderCode,
       status,
       reason: 'Số tiền AppotaPay trả về không khớp đơn hàng',
       payload,
     };
   }
 
-  return { ok: true, orderCode, status, payload };
+  return { ok: true, orderCode: resolvedOrderCode, status, payload };
 }
 
 function momoAmount(payload: MomoPaymentResultPayload): number | null {
