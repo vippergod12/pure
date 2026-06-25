@@ -166,7 +166,7 @@ export const api = {
     return request<void>(`/api/consultations/${id}`, { method: 'DELETE' });
   },
   listOrders() {
-    return request<Order[]>('/api/orders');
+    return request<Order[]>('/api/admin/orders');
   },
   updateOrder(id: number, input: {
     status: string;

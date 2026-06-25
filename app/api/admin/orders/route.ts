@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { sql } from '@/lib/server/db';
 import { getAdminFromRequest } from '@/lib/server/auth';
+import { sql } from '@/lib/server/db';
 import { noStoreHeaders, unauthorized } from '@/lib/server/http';
 
 export const runtime = 'nodejs';
@@ -27,8 +27,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(rows, {
     headers: {
       ...noStoreHeaders(),
-      'X-Orders-Count': String(rows.length),
-      'X-Orders-Route-Version': 'all-orders-20260625',
+      'X-Admin-Orders-Count': String(rows.length),
+      'X-Admin-Orders-Route-Version': 'admin-orders-all-20260625',
     },
   });
 }
