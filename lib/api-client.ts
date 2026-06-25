@@ -51,7 +51,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     finalPath = `${finalPath}${sep}_t=${Date.now()}`;
   }
 
-  const res = await fetch(finalPath, { ...options, headers });
+  const res = await fetch(finalPath, { ...options, headers, cache: options.cache ?? 'no-store' });
   if (res.status === 204) return undefined as T;
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;

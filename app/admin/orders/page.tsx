@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import Modal from '@/components/Modal';
 import Pagination from '@/components/Pagination';
 import RowActions from '@/components/RowActions';
@@ -116,24 +116,52 @@ export default function AdminOrdersPage() {
   const [editTransactionId, setEditTransactionId] = useState('');
   const [editNote, setEditNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
 
-  async function refresh() {
-    setLoading(true);
+  const refresh = useCallback(async (options: { silent?: boolean } = {}) => {
+    if (!options.silent) setLoading(true);
     setError(null);
     try {
       const data = await api.listOrders();
       setOrders(data);
+      setLastRefreshedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể tải danh sách đơn hàng');
-      setOrders([]);
+      if (!options.silent) setOrders([]);
     } finally {
-      setLoading(false);
+      if (!options.silent) setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     refresh();
-  }, []);
+  }, [refresh]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refresh({ silent: true });
+      }
+    }, 10000);
+
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refresh({ silent: true });
+      }
+    }
+
+    function onFocus() {
+      refresh({ silent: true });
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [refresh]);
 
   const stats = useMemo(() => {
     let needsAction = 0;
@@ -240,8 +268,18 @@ export default function AdminOrdersPage() {
         <div>
           <h1>Đơn hàng</h1>
           <p>Quản lý đơn thanh toán AppotaPay, MoMo Merchant và QR thủ công.</p>
+          {lastRefreshedAt && (
+            <p className="admin-refresh-meta">
+              Tự động cập nhật mỗi 10 giây · Lần cuối {lastRefreshedAt.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+              })}
+            </p>
+          )}
         </div>
-        <button type="button" className="btn btn-ghost" onClick={refresh} disabled={loading}>
+        <button type="button" className="btn btn-ghost" onClick={() => refresh()} disabled={loading}>
           Tải lại
         </button>
       </div>

@@ -19,7 +19,6 @@ export async function GET(req: NextRequest) {
            created_at, updated_at
     FROM orders
     ORDER BY created_at DESC
-    LIMIT 1000
   `;
 
   return jsonOk(rows, { cache: 'no-store' });
