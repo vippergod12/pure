@@ -4435,6 +4435,47 @@ input[type="reset"]:disabled,
   width: 100%;
   min-width: 280px;
 }
+.orders-result-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.orders-result-bar strong {
+  color: var(--text);
+  font-family: var(--font-numeric);
+  font-weight: 700;
+}
+.orders-page-jump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.orders-page-jump label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.orders-page-jump select {
+  height: 34px;
+  min-width: 82px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 8px;
+  font: inherit;
+}
 
 .data-table--orders {
   min-width: 1230px;
@@ -4605,6 +4646,13 @@ input[type="reset"]:disabled,
   .order-detail dl div {
     grid-template-columns: 1fr;
     gap: 2px;
+  }
+  .orders-result-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .orders-page-jump {
+    justify-content: space-between;
   }
 }
 @media (max-width: 480px) {

@@ -217,6 +217,9 @@ export default function AdminOrdersPage() {
     const start = (safePage - 1) * PAGE_SIZE;
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, safePage]);
+  const showPagination = filtered.length > PAGE_SIZE;
+  const pageStart = filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
+  const pageEnd = Math.min(safePage * PAGE_SIZE, filtered.length);
 
   useEffect(() => {
     if (page !== safePage) setPage(safePage);
@@ -356,6 +359,48 @@ export default function AdminOrdersPage() {
       </div>
 
       {error && <div className="form-error">{error}</div>}
+
+      {!loading && filtered.length > 0 && (
+        <div className="orders-result-bar">
+          <span>
+            Hiển thị <strong>{pageStart}</strong>-<strong>{pageEnd}</strong> trong tổng <strong>{filtered.length}</strong> đơn
+          </span>
+          {showPagination && (
+            <div className="orders-page-jump">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={safePage <= 1}
+              >
+                Trước
+              </button>
+              <label>
+                <span>Trang</span>
+                <select
+                  value={safePage}
+                  onChange={(event) => setPage(Number(event.target.value))}
+                  aria-label="Chọn trang đơn hàng"
+                >
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                    <option key={pageNumber} value={pageNumber}>
+                      {pageNumber} / {totalPages}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={safePage >= totalPages}
+              >
+                Sau
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="empty-state">Đang tải đơn hàng...</div>

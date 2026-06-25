@@ -1,7 +1,8 @@
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { sql } from '@/lib/server/db';
 import { getAdminFromRequest } from '@/lib/server/auth';
-import { jsonOk, unauthorized } from '@/lib/server/http';
+import { noStoreHeaders, unauthorized } from '@/lib/server/http';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,5 +22,11 @@ export async function GET(req: NextRequest) {
     ORDER BY created_at DESC
   `;
 
-  return jsonOk(rows, { cache: 'no-store' });
+  return NextResponse.json(rows, {
+    headers: {
+      ...noStoreHeaders(),
+      'X-Orders-Count': String(rows.length),
+      'X-Orders-Route-Version': 'all-orders-20260625',
+    },
+  });
 }
